@@ -1,3 +1,103 @@
-loadstring([[
-local S={Fruits={"Control","Leopard","Kitsune","T-Rex","Yeti"},CloneOffset=Vector3.new(5,0,0),CollectDistance=25,FarmRange=35,AttackKey=Enum.KeyCode.E,QuestNPCs={"Quest Giver","NPC","Giver"},QuestDistance=15,QuestInterval=30}p=game.Players.LocalPlayer c=p.Character or p.CharacterAdded:Wait() h=c:WaitForChild("HumanoidRootPart") m=c:WaitForChild("Humanoid") v=game:GetService("VirtualInputManager") mo=p:GetMouse() function clk(p)mo.Move(p)wait(.05)mo.Click()end function pr(k,d)d=d or .1 v:SendKeyEvent(true,k,false,game)wait(d)v:SendKeyEvent(false,k,false,game)end function clone(o)if not o or not o:IsA("Model")then return end local pr=o.PrimaryPart if not pr then return end local cl=o:Clone()cl.Parent=workspace cl:SetPrimaryPartCFrame(pr.CFrame+S.CloneOffset)print("[Клон] "..o.Name)end local AC=false workspace.ChildAdded:Connect(function(ch)if not AC then return end for _,n in pairs(S.Fruits)do if ch.Name==n then wait(.3)clone(ch)break end end end) local ACol=false function collect()local cl,md=nil,S.CollectDistance for _,o in pairs(workspace:GetChildren())do for _,n in pairs(S.Fruits)do if o.Name==n then local pos=o.PrimaryPart and o.PrimaryPart.Position or o.Position local d=(pos-h.Position).Magnitude if d<md then md=d cl=o end break end end end if cl then local pos=cl.PrimaryPart and cl.PrimaryPart.Position or cl.Position m:MoveTo(pos)repeat wait(.2)until (pos-h.Position).Magnitude<5 or not ACol if(pos-h.Position).Magnitude<5 then pr(Enum.KeyCode.E)wait(.1)clk(pos)print("[Сбор] "..cl.Name)return true end end return false end local AF=false function findNPC()for _,o in pairs(workspace:GetChildren())do if o:IsA("Model")and o:FindFirstChild("Humanoid")then for _,n in pairs(S.QuestNPCs)do if o.Name:find(n)or o.Name==n then local pos=o.PrimaryPart and o.PrimaryPart.Position or o.HumanoidRootPart.Position return o,pos end end end end return nil,nil end function takeQuest()local npc,pos=findNPC()if not npc then print("[Квест] NPC не найден")return false end local dist=(pos-h.Position).Magnitude if dist>S.QuestDistance then m:MoveTo(pos)repeat wait(.2)until (pos-h.Position).Magnitude<S.QuestDistance or not AF end pr(Enum.KeyCode.E,.2)wait(.3)clk(pos)print("[Квест] Взят у "..npc.Name)return true end function getEnemy()local e={}for _,o in pairs(workspace:GetChildren())do if o:IsA("Model")and o:FindFirstChild("Humanoid")then local pl=game.Players:GetPlayerFromCharacter(o)if not pl and o.Name~=p.Name then table.insert(e,o)end end end local cl,md=nil,S.FarmRange for _,en in ipairs(e)do local pos=en.PrimaryPart and en.PrimaryPart.Position or en.HumanoidRootPart.Position local d=(pos-h.Position).Magnitude if d<md then md=d cl=en end end return cl end function attack(en)if not en then return false end local pos=en.PrimaryPart and en.PrimaryPart.Position or en.HumanoidRootPart.Position m:MoveTo(pos)repeat wait(.2)until (pos-h.Position).Magnitude<10 or not AF if(pos-h.Position).Magnitude<10 then pr(S.AttackKey,.3)clk(pos)return true end return false end local qtime=0 game:GetService("RunService").Heartbeat:Connect(function()if ACol then collect()end if AF then local now=tick()if now-qtime>S.QuestInterval then takeQuest()qtime=now end local en=getEnemy()if en then attack(en)end end end) local sg=Instance.new("ScreenGui")sg.Name="MyGUI"sg.Parent=p.PlayerGui local fr=Instance.new("Frame")fr.Size=UDim2.new(0,300,0,200)fr.Position=UDim2.new(.5,-150,.5,-100)fr.BackgroundColor3=Color3.new(.12,.12,.16)fr.BackgroundTransparency=.2 fr.Active=true fr.Draggable=true fr.Parent=sg function mkBtn(t,y,cb)local b=Instance.new("TextButton")b.Size=UDim2.new(0,200,0,30)b.Position=UDim2.new(.5,-100,0,y)b.Text=t b.BackgroundColor3=Color3.new(.24,.24,.31)b.TextColor3=Color3.new(1,1,1)b.Parent=fr b.MouseButton1Click:Connect(cb)end mkBtn("Клонирование (вкл/выкл)",20,function()AC=not AC print("Клон: "..tostring(AC))end)mkBtn("Автосбор (вкл/выкл)",60,function()ACol=not ACol print("Сбор: "..tostring(ACol))end)mkBtn("Автофарм+квест (вкл/выкл)",100,function()AF=not AF print("Фарм: "..tostring(AF))end)mkBtn("Остановить всё",140,function()AC=false ACol=false AF=false print("Стоп")end) print("✅ Загружено")
-]])()
+-- ==========================================
+-- FLY SCRIPT С МЕНЮ (Emergency Hamburg)
+-- ==========================================
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local flying = false
+local speed = 50
+local bodyVel, bodyGyro
+
+-- Функция включения/выключения полёта
+local function toggleFly()
+    flying = not flying
+    if flying then
+        bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Velocity = Vector3.new(0,0,0)
+        bodyVel.MaxForce = Vector3.new(1e9,1e9,1e9)
+        bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.MaxTorque = Vector3.new(1e9,1e9,1e9)
+        bodyVel.Parent = hrp
+        bodyGyro.Parent = hrp
+        game:GetService("RunService").Heartbeat:Connect(function()
+            if flying and hrp and hrp.Parent then
+                local dir = Vector3.new(0,0,0)
+                local uis = game:GetService("UserInputService")
+                if uis:IsKeyDown(Enum.KeyCode.W) then dir = dir + hrp.CFrame.LookVector end
+                if uis:IsKeyDown(Enum.KeyCode.S) then dir = dir - hrp.CFrame.LookVector end
+                if uis:IsKeyDown(Enum.KeyCode.A) then dir = dir - hrp.CFrame.RightVector end
+                if uis:IsKeyDown(Enum.KeyCode.D) then dir = dir + hrp.CFrame.RightVector end
+                if uis:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
+                if uis:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
+                if dir.Magnitude > 0 then dir = dir.Unit * speed end
+                bodyVel.Velocity = dir
+                bodyGyro.CFrame = hrp.CFrame
+            end
+        end)
+    else
+        if bodyVel then bodyVel:Destroy() end
+        if bodyGyro then bodyGyro:Destroy() end
+    end
+end
+
+-- СОЗДАНИЕ GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlyMenu"
+screenGui.Parent = player.PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0.5, -125, 0.5, -75)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.BackgroundTransparency = 0.2
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.Text = "🛩️ Управление полётом"
+title.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Parent = frame
+
+local flyBtn = Instance.new("TextButton")
+flyBtn.Size = UDim2.new(0, 150, 0, 35)
+flyBtn.Position = UDim2.new(0.5, -75, 0, 40)
+flyBtn.Text = "Включить полёт"
+flyBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+flyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+flyBtn.Parent = frame
+flyBtn.MouseButton1Click:Connect(function()
+    toggleFly()
+    flyBtn.Text = flying and "Отключить полёт" or "Включить полёт"
+    flyBtn.BackgroundColor3 = flying and Color3.fromRGB(180, 50, 50) or Color3.fromRGB(60, 120, 60)
+end)
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0, 60, 0, 25)
+speedLabel.Position = UDim2.new(0, 10, 0, 85)
+speedLabel.Text = "Скорость:"
+speedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Parent = frame
+
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0, 80, 0, 25)
+speedBox.Position = UDim2.new(0, 80, 0, 85)
+speedBox.Text = "50"
+speedBox.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+speedBox.TextColor3 = Color3.fromRGB(255,255,255)
+speedBox.Parent = frame
+speedBox.FocusLost:Connect(function()
+    local val = tonumber(speedBox.Text)
+    if val and val > 0 then
+        speed = val
+    else
+        speedBox.Text = tostring(speed)
+    end
+end)
+
+print("✅ Меню полёта загружено. Наслаждайтесь!")
